@@ -6,24 +6,26 @@ import time
 import numpy as np
 from sources import CarlaEnv, STOP, models, ACTIONS_NAMES
 from collections import deque
+from contextlib import redirect_stderr, redirect_stdout
 from threading import Thread
 from dataclasses import dataclass
 import cv2
 
-# Try to mute and then load Tensorflow and Keras
-# Muting seems to not work lately on Linux in any way
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-stdin = sys.stdin
-sys.stdin = open(os.devnull, 'w')
-stderr = sys.stderr
-sys.stderr = open(os.devnull, 'w')
-import tensorflow as tf
-tf.logging.set_verbosity(tf.logging.ERROR)
-import keras.backend.tensorflow_backend as backend
-from keras.optimizers import Adam
-from keras.models import load_model, Model
-sys.stdin = stdin
-sys.stderr = stderr
+# Suppress excessive console output and then load Tensorflow and Keras
+# NOTE: This will potentially swallow important or useful information about
+#       problems with your tensorflow/keras installation, but it works.
+#       (Tested on Linux)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # FATAL
+with open(os.devnull, "w") as null:
+    with redirect_stderr(null), redirect_stdout(null):
+        import tensorflow as tf
+        import keras.backend.tensorflow_backend as backend
+        from tensorflow.python.util import deprecation
+        from keras.optimizers import Adam
+        from keras.models import load_model, Model
+
+deprecation._PRINT_DEPRECATION_WARNINGS = False
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 
 # Agent class

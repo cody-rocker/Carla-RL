@@ -1,18 +1,20 @@
 import os
 import sys
+from contextlib import redirect_stderr, redirect_stdout
 
-# Try to mute and then load TensorFlow and Keras
-# Muting seems to not work lately on Linux in any way
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-stdin = sys.stdin
-sys.stdin = open(os.devnull, 'w')
-stderr = sys.stderr
-sys.stderr = open(os.devnull, 'w')
-import tensorflow as tf
-tf.logging.set_verbosity(tf.logging.ERROR)
-from keras.callbacks import Callback
-sys.stdin = stdin
-sys.stderr = stderr
+# Suppress excessive console output and then load Tensorflow and Keras
+# NOTE: This will potentially swallow important or useful information about
+#       problems with your tensorflow/keras installation, but it works.
+#       (Tested on Linux)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # FATAL
+with open(os.devnull, "w") as null:
+    with redirect_stderr(null), redirect_stdout(null):
+        import tensorflow as tf
+        from tensorflow.python.util import deprecation
+        from keras.callbacks import Callback
+
+deprecation._PRINT_DEPRECATION_WARNINGS = False
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 # Own Tensorboard class giving ability to use single writer across multiple .fit() calls
 # Allows us also to easily log additional data
